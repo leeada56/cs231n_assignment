@@ -32,25 +32,25 @@ print 'Test labels shape: ', y_test.shape
 classes = ['plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
 num_classes = len(classes)
 samples_per_class = 7
-# for y, cls in enumerate(classes):
-#     idxs = np.flatnonzero(y_train == y)
-#     idxs = np.random.choice(idxs, samples_per_class, replace=False)
-#     for i, idx in enumerate(idxs):
-#         plt_idx = i * num_classes + y + 1
-#         plt.subplot(samples_per_class, num_classes, plt_idx)
-#         plt.imshow(X_train[idx].astype('uint8'))
-#         plt.axis('off')
-#         if i == 0:
-#             plt.title(cls)
-# plt.show()
+for y, cls in enumerate(classes):
+    idxs = np.flatnonzero(y_train == y)
+    idxs = np.random.choice(idxs, samples_per_class, replace=False)
+    for i, idx in enumerate(idxs):
+        plt_idx = i * num_classes + y + 1
+        plt.subplot(samples_per_class, num_classes, plt_idx)
+        plt.imshow(X_train[idx].astype('uint8'))
+        plt.axis('off')
+        if i == 0:
+            plt.title(cls)
+plt.show()
 
 # Subsample the data for more efficient code execution in this exercise
-num_training = 100
+num_training = 5000
 mask = range(num_training)
 X_train = X_train[mask]
 y_train = y_train[mask]
 
-num_test = 10
+num_test = 1000
 mask = range(num_test)
 X_test = X_test[mask]
 y_test = y_test[mask]
@@ -77,8 +77,8 @@ print "dists.shape = " , dists.shape
 
 # We can visualize the distance matrix: each row is a single test example and
 # its distances to training examples
-# plt.imshow(dists, interpolation='none')
-# plt.show()
+plt.imshow(dists, interpolation='none')
+plt.show()
 
 
 
@@ -149,7 +149,7 @@ print 'No loop version took %f seconds' % no_loop_time
 
 # you should see significantly faster performance with the fully vectorized implementation
 
-exit()
+
 
 num_folds = 5
 k_choices = [1, 3, 5, 8, 10, 12, 15, 20, 50, 100]
@@ -163,7 +163,8 @@ y_train_folds = []
 # y_train_folds[i] is the label vector for the points in X_train_folds[i].     #
 # Hint: Look up the numpy array_split function.                                #
 ################################################################################
-pass
+X_train_folds = np.array_split(X_train, num_folds)
+y_train_folds = np.array_split(y_train, num_folds)
 ################################################################################
 #                                 END OF YOUR CODE                             #
 ################################################################################
@@ -183,7 +184,30 @@ k_to_accuracies = {}
 # last fold as a validation set. Store the accuracies for all fold and all     #
 # values of k in the k_to_accuracies dictionary.                               #
 ################################################################################
-pass
+for k in k_choices:
+    k_to_accuracies[k] = []
+    for i in range(num_folds):
+        X_train_new = []
+        y_train_new = []
+        for j in range(num_folds):
+            if i != j:
+                X_train_new.extend(X_train_folds[j])
+                y_train_new.extend(y_train_folds[j])
+            else:
+                X_test_new = X_train_folds[j]
+                y_test_new = y_train_folds[j]
+        X_train_new = np.array(X_train_new)
+        y_train_new = np.array(y_train_new)
+        
+        classifier = KNearestNeighbor()
+        classifier.train(X_train_new, y_train_new)
+        
+        dists = classifier.compute_distances_no_loops(X_test_new)
+        y_test_pred = classifier.predict_labels(dists, k=1)
+        num_correct = np.sum(y_test_pred == y_test_new)
+        accuracy = float(num_correct) / num_test
+        k_to_accuracies[k].append(accuracy)
+        
 ################################################################################
 #                                 END OF YOUR CODE                             #
 ################################################################################
